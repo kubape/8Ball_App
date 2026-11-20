@@ -2,7 +2,14 @@
   "id": "/8Ball_App/",
   "name": "Magic 8 Ball",
   "short_name": "8 Ball",
+  "description": "Ask a yes-or-no question and let the Magic 8 Ball decide.",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone"
+  "display": "standalone",
+  "background_color": "#f8f4e9",
+  "theme_color": "#f8f4e9",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
 }

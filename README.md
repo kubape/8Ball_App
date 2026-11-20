@@ -2,6 +2,12 @@
 
 The app behavior runs in the browser and is ready to import from the GitHub Pages UI.
 
+## Design concepts
+
+- **Dot-Matrix Oracle** uses a ball drawn from ASCII characters, a vermilion print field, and a paper answer card. The Home Screen icon carries over the orange field and pixelated 8. This is the implemented design.
+- **Deep Current** uses a glossy midnight-blue sphere and a floating triangular answer window, like looking through tinted glass. The Home Screen icon would frame an ice-blue triangle in a black orb.
+- **Pocket Fortune** uses cobalt and butter yellow, rounded lettering, and stacked cards. The answer appears on a punch-out fortune slip. The Home Screen icon would show a cobalt 8 on a yellow ticket.
+
 ## UI integration
 
 Add the manifest link to the page head.
