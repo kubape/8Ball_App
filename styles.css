@@ -84,6 +84,7 @@ h1 {
   overflow-wrap: anywhere;
   animation: print 360ms steps(12, end) both;
 }
+.answer:focus { outline: none; }
 @keyframes tumble {
   0%, 100% { transform: translate(0, 0) rotate(0); }
   25% { transform: translate(7px, -5px) rotate(6deg); }
