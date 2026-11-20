@@ -34,7 +34,7 @@ function vector(sample) {
   return values.every(Number.isFinite) ? values : null;
 }
 
-export function createShakeDetector(onShake) {
+export function createShakeDetector(onShake, { onImpulse } = {}) {
   let state = 'idle';
   let previous = null;
   let peak = null;
@@ -58,6 +58,7 @@ export function createShakeDetector(onShake) {
 
     const force = linear ?? delta;
     if (!force || now - lastShake < 1200 || Math.hypot(...force) < 12) return;
+    onImpulse?.();
 
     // Require impulses in opposing directions within one gesture.
     const opposite = peak && now - peak.time < 350 &&

@@ -1,4 +1,4 @@
-import { ask, createShakeDetector, createVoiceInput } from './eight-ball.mjs';
+import { ask, createShakeDetector, createVoiceInput } from './eight-ball.mjs?v=2';
 
 const app = document.querySelector('.app');
 const form = document.querySelector('#question-form');
@@ -6,7 +6,9 @@ const question = document.querySelector('#question');
 const questionStatus = document.querySelector('#question-status');
 const mic = document.querySelector('#mic');
 const stage = document.querySelector('#stage');
-const card = document.querySelector('#answer-card');
+const orb = document.querySelector('#orb');
+const reading = document.querySelector('#reading');
+const answerDisplay = document.querySelector('#answer-display');
 const answer = document.querySelector('#answer');
 const result = document.querySelector('#result');
 const askedQuestion = document.querySelector('#asked-question');
@@ -25,8 +27,7 @@ let voiceFinishing = false;
 let voiceFailed = false;
 
 function renderMic() {
-  mic.setAttribute('aria-pressed', String(voiceActive));
-  mic.setAttribute('aria-label', voiceActive ? 'Stop dictation' : 'Dictate question');
+  mic.textContent = voiceActive ? 'Stop dictation' : 'Dictate';
 }
 
 const voice = createVoiceInput({
@@ -59,9 +60,8 @@ const voice = createVoiceInput({
 });
 
 if (!voice.supported) {
-  mic.disabled = true;
-  mic.setAttribute('aria-label', 'Microphone unavailable');
-  setStatus(questionStatus, 'Type or use your keyboard’s dictation.');
+  mic.hidden = true;
+  setStatus(questionStatus, 'You can use keyboard dictation.');
 }
 
 mic.addEventListener('click', () => {
@@ -91,20 +91,30 @@ question.addEventListener('input', () => {
 let composing = false;
 question.addEventListener('compositionstart', () => { composing = true; });
 question.addEventListener('compositionend', () => { composing = false; });
-question.addEventListener('keydown', (event) => {
-  if (event.key !== 'Enter' || event.shiftKey || event.isComposing || composing) return;
-  event.preventDefault();
-  form.requestSubmit();
-});
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let impulseAnimation;
+let isReading = false;
+
+function animateImpulse() {
+  if (isReading || !result.hidden || voiceActive || reducedMotion.matches) return;
+  if (impulseAnimation?.playState === 'running') return;
+  impulseAnimation = orb.animate?.([
+    { transform: 'translateX(0) rotate(0)' },
+    { transform: 'translateX(-6px) rotate(-4deg)' },
+    { transform: 'translateX(5px) rotate(3deg)' },
+    { transform: 'translateX(0) rotate(0)' },
+  ], { duration: 260, easing: 'ease-out' });
+}
 
 function submit(source) {
-  if (!result.hidden || composing) return;
+  if (isReading || !result.hidden || composing) return;
   if (voiceActive && source === 'shake') return;
 
   const text = question.value.trim();
   const reply = ask(text);
   if (!reply) {
-    if (source === 'tap') {
+    if (source === 'keyboard') {
       setStatus(questionStatus, 'Enter a question first.');
       question.focus();
     }
@@ -112,34 +122,45 @@ function submit(source) {
   }
 
   if (voiceActive) voice.cancel();
+  isReading = true;
+  impulseAnimation?.cancel();
   question.blur();
-  askedQuestion.textContent = text;
-  answer.textContent = reply.text;
-  card.dataset.tone = reply.tone;
-  form.hidden = true;
-  result.hidden = false;
-  card.hidden = false;
-  stage.classList.add('answered');
+  form.inert = true;
+  stage.classList.add('reading-reply');
+  reading.hidden = false;
   updateKeyboard();
-  answer.focus();
+
+  window.setTimeout(() => {
+    reading.hidden = true;
+    stage.classList.remove('reading-reply');
+    orb.hidden = true;
+    askedQuestion.textContent = text;
+    answer.textContent = reply.text;
+    form.hidden = true;
+    form.inert = false;
+    result.hidden = false;
+    answerDisplay.hidden = false;
+    isReading = false;
+    answer.focus();
+  }, 720);
 }
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
-  submit('tap');
+  submit('keyboard');
 });
 
 reset.addEventListener('click', () => {
-  card.hidden = true;
-  stage.classList.remove('answered');
+  answerDisplay.hidden = true;
+  orb.hidden = false;
   result.hidden = true;
   form.reset();
-  setStatus(questionStatus, voice.supported ? '' : 'Type or use your keyboard’s dictation.');
+  setStatus(questionStatus, voice.supported ? '' : 'You can use keyboard dictation.');
   form.hidden = false;
   question.focus();
 });
 
-const shake = createShakeDetector(() => submit('shake'));
+const shake = createShakeDetector(() => submit('shake'), { onImpulse: animateImpulse });
 let motionEnabled = false;
 let motionRequest = 0;
 
@@ -165,10 +186,10 @@ motionButton.addEventListener('click', async () => {
   motionEnabled = status === 'enabled';
   renderMotion();
   const messages = {
-    enabled: 'Shake your iPhone or tap Ask.',
-    denied: 'Motion access was denied. Tap Ask to get a reply.',
-    unsupported: 'Motion is unavailable here. Tap Ask to get a reply.',
-    unavailable: 'Motion couldn’t start. Tap Ask to get a reply.',
+    enabled: 'Shake your iPhone when your question is ready.',
+    denied: 'Motion access was denied. Use Go or Enter.',
+    unsupported: 'Motion is unavailable here. Use Go or Enter.',
+    unavailable: 'Motion couldn’t start. Use Go or Enter.',
   };
   setStatus(motionStatus, messages[status]);
 });
@@ -198,6 +219,7 @@ window.addEventListener('resize', updateKeyboard);
 window.addEventListener('pagehide', () => {
   voice.cancel();
   shake.disable();
+  impulseAnimation?.cancel();
   motionRequest++;
   motionEnabled = false;
   motionButton.disabled = false;
